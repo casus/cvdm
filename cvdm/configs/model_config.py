@@ -7,3 +7,4 @@ class ModelConfig:
     alpha: float
     snr_expansion_n: int
     load_weights: str
+    zmd: bool

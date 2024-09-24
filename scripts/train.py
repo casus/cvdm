@@ -56,7 +56,8 @@ def main() -> None:
         "imagenet_sr",
         "biosr_phase",
         "imagenet_phase",
-    ], "Possible tasks are biosr_sr, imagenet_sr, biosr_phase, imagenet_phase"
+        "other",
+    ], "Possible tasks are biosr_sr, imagenet_sr, biosr_phase, imagenet_phase, other"
 
     print("Getting data...")
     batch_size = data_config.batch_size
@@ -76,13 +77,15 @@ def main() -> None:
     generation_timesteps = eval_config.generation_timesteps
 
     print("Creating model...")
-    noise_model, joint_model, schedule_model = instantiate_cvdm(
+    models = instantiate_cvdm(
         lr=training_config.lr,
         generation_timesteps=generation_timesteps,
         cond_shape=x_shape,
         out_shape=y_shape,
         model_config=model_config,
     )
+    # TODO: make pretty
+    noise_model, joint_model, schedule_model, mu_model = models
     if model_config.load_weights is not None:
         joint_model.load_weights(model_config.load_weights)
 
@@ -102,7 +105,11 @@ def main() -> None:
     output_path = eval_config.output_path
 
     print("Starting training...")
-    cumulative_loss = np.zeros(5)
+    # TODO: handle multiple sizes
+    if model_config.zmd:
+        cumulative_loss = np.zeros(6)
+    else:
+        cumulative_loss = np.zeros(5)
     step = 0
     run_id = str(uuid.uuid4())
     for _ in trange(epochs):
@@ -115,27 +122,31 @@ def main() -> None:
             )
 
             if step % log_freq == 0:
+                print("log loss")
                 log_loss(run=run, avg_loss=cumulative_loss / (step + 1), prefix="train")
 
-            if step % checkpoint_freq == 0:
-                save_weighs(
-                    run=run,
-                    model=joint_model,
-                    step=step,
-                    output_path=output_path,
-                    run_id=run_id,
-                )
+            # if step % checkpoint_freq == 0:
+            #     save_weighs(
+            #         run=run,
+            #         model=joint_model,
+            #         step=step,
+            #         output_path=output_path,
+            #         run_id=run_id,
+            #     )
 
             if step % image_freq == 0:
+                print("log img")
                 output_montage, metrics = obtain_output_montage_and_metrics(
                     batch_x,
                     batch_y.numpy(),
                     noise_model,
                     schedule_model,
+                    mu_model,
                     generation_timesteps,
                     task,
                 )
                 log_metrics(run, metrics, prefix="train")
+                # TODO: create dir if does not exist
                 save_output_montage(
                     run=run,
                     output_montage=output_montage,
@@ -143,11 +154,15 @@ def main() -> None:
                     output_path=output_path,
                     run_id=run_id,
                     prefix="train",
-                    cmap=cmap
+                    cmap=cmap,
                 )
 
             if step % val_freq == 0:
-                val_loss = np.zeros(5)
+                print("log val")
+                if model_config.zmd:
+                    val_loss = np.zeros(6)
+                else:
+                    val_loss = np.zeros(5)
                 for batch in val_dataset:
                     batch_x, batch_y = batch
                     model_input = prepare_model_input(
@@ -166,6 +181,7 @@ def main() -> None:
                         batch_y.numpy(),
                         noise_model,
                         schedule_model,
+                        mu_model,
                         generation_timesteps,
                         task,
                     )
@@ -177,7 +193,7 @@ def main() -> None:
                         output_path=output_path,
                         run_id=run_id,
                         prefix="val",
-                        cmap=cmap
+                        cmap=cmap,
                     )
 
             step += 1

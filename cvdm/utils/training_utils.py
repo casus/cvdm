@@ -54,6 +54,17 @@ def prepare_dataset(
         )
         x_channels = 2
         y_channels = 1
+    elif task == "other":
+        dataloader = NpyDataloader(
+            path=data_config.dataset_path,
+            n_samples=data_config.n_samples,
+            im_size=data_config.im_size,
+        )
+        # TODO: get channels from config or dataloader
+        x_channels = 1
+        y_channels = 1
+    else:
+        raise NotImplementedError()
 
     x_shape = tf.TensorShape([data_config.im_size, data_config.im_size, x_channels])
     y_shape = tf.TensorShape([data_config.im_size, data_config.im_size, y_channels])
@@ -84,7 +95,9 @@ def train_on_batch_cvdm(
     batch_x: np.ndarray, batch_y: np.ndarray, joint_model: Model, diff_inp: bool = False
 ) -> np.ndarray:
     model_input = prepare_model_input(batch_x, batch_y, diff_inp)
+    print(model_input[0].shape, model_input[1].shape)
     loss = joint_model.train_on_batch(model_input, np.zeros_like(batch_y))
+    print(loss)
     return np.array(loss)
 
 

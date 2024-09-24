@@ -17,13 +17,15 @@ def ddpm_obtain_sr_img(
     timesteps_test: int,
     noise_model: Model,
     schedule_model: Model,
+    mu_model: Model,
     out_shape: Optional[Tuple[int, ...]] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     if out_shape == None:
         out_shape = x.shape
     assert out_shape is not None
     pred_sr = np.random.normal(0, 1, out_shape)
-
+    if mu_model is not None:
+        mu_pred = mu_model.predict(x, verbose=0)[0]
     alpha_vec = np.zeros(out_shape + (timesteps_test,))
     for t in tqdm(range(timesteps_test)):
         t_inp = np.clip(
@@ -53,11 +55,18 @@ def ddpm_obtain_sr_img(
                 + np.sqrt(1 - gamma_t - beta_factor) * pred_noise
                 + np.sqrt(beta_factor) * z
             )
-        pred_noise = noise_model.predict([pred_sr, x, gamma_t], verbose=0)
+        if mu_model is not None:
+            pred_noise = noise_model.predict([pred_sr, x, mu_pred, gamma_t], verbose=0)
+        else:
+            pred_noise = noise_model.predict([pred_sr, x, gamma_t], verbose=0)
         pred_sr = (pred_sr - np.sqrt(1 - gamma_t) * pred_noise) / np.sqrt(gamma_t)
         count += 1
-
-    return pred_sr, gamma_vec, alpha_vec
+    if mu_model is not None:
+        sigma = 0.5
+        pred_diff = sigma * pred_sr + mu_pred
+    else:
+        pred_diff = pred_sr
+    return pred_diff, gamma_vec, alpha_vec
 
 
 def create_output_montage(
@@ -145,6 +154,7 @@ def obtain_output_montage_and_metrics(
     batch_y: np.ndarray,
     noise_model: Model,
     schedule_model: Model,
+    mu_model: Optional[Model],
     generation_timesteps: int,
     task: str,
 ) -> Tuple[np.ndarray, Dict]:
@@ -155,6 +165,7 @@ def obtain_output_montage_and_metrics(
         generation_timesteps,
         noise_model,
         schedule_model,
+        mu_model,
         batch_y.shape,
     )
     if diff_inp:

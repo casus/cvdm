@@ -12,7 +12,9 @@ class NpyDataloader:
         n_samples: int,
         im_size: int,
     ) -> None:
-        self._x = np.load(f"{path}/x.npy", mmap_mode="r+")[:n_samples]
+        # TODO: handle the channels better?
+        self._x = np.load(f"{path}/x.npy", mmap_mode="r+")[:n_samples][..., 0:1]
+        print(self._x.shape)
         self._y = np.load(f"{path}/y.npy", mmap_mode="r+")[:n_samples]
         self._im_size = im_size
         self._n_samples: int = min(n_samples, self._x.shape[0])
