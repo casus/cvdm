@@ -42,5 +42,8 @@ venv/
 .vscode/
 
 # Data & models
-/data/
+data/
 models/
+
+# Exclude 'imnet_sample' from being ignored
+!data/imnet_sample/
