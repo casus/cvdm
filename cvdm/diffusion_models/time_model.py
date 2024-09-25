@@ -1,6 +1,6 @@
 import tensorflow as tf
-from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Activation, Conv2D, Input
+from tensorflow.keras.models import Model
 
 
 def time_model(

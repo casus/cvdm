@@ -1,15 +1,17 @@
 from typing import Tuple
+
 import tensorflow as tf
+from tensorflow.keras.activations import swish
+from tensorflow.keras.layers import AveragePooling2D, Conv2D, Input, UpSampling2D
+from tensorflow.keras.models import Model
+from tensorflow_addons.layers import GroupNormalization
+
 from cvdm.architectures.components.attention_block import attention_block
 from cvdm.architectures.components.deep_residual_block import (
     deep_resblock,
     up_deep_resblock,
 )
 from cvdm.architectures.components.residual_block import resblock, up_resblock
-from tensorflow.keras.models import Model
-from tensorflow.keras.activations import swish
-from tensorflow.keras.layers import AveragePooling2D, Conv2D, Input, UpSampling2D
-from tensorflow_addons.layers import GroupNormalization
 
 
 def upsample(x: tf.Tensor, use_conv: bool = False) -> tf.Tensor:

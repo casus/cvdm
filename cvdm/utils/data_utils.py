@@ -20,15 +20,6 @@ def read_and_patch_image_from_filename(filename: str, im_size: int) -> Image.Ima
     return img_patch
 
 
-def sample_norm_01(x: np.ndarray) -> np.ndarray:
-    x = x.astype(np.float32)
-    n_x: np.ndarray = (x - np.amin(x, axis=(0, 1), keepdims=True)) / (
-        np.amax(x, axis=(0, 1), keepdims=True) - np.amin(x, axis=(0, 1), keepdims=True)
-    )
-
-    return n_x * 2 - 1
-
-
 def center_crop(x: np.ndarray, crop_size: int = 2048) -> np.ndarray:
     x_center = x.shape[1] // 2
     y_center = x.shape[0] // 2

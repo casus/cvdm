@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Activation, Conv2D, Input
+from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 
 from cvdm.architectures.unet import UNet

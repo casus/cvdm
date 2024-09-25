@@ -4,8 +4,9 @@ model:
   noise_model_type: "unet"
   alpha: 0.001
   load_weights: null
+  load_mu_weights: null
   snr_expansion_n: 1
-  zmd: False
+  zmd: True
 
 training:
   lr: 0.0001

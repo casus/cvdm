@@ -1,7 +1,7 @@
+import os
 from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
-import tensorflow as tf
 from matplotlib import pyplot as plt
 from neptune import Run
 from neptune.types import File
@@ -17,7 +17,7 @@ def ddpm_obtain_sr_img(
     timesteps_test: int,
     noise_model: Model,
     schedule_model: Model,
-    mu_model: Model,
+    mu_model: Optional[Model],
     out_shape: Optional[Tuple[int, ...]] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     if out_shape == None:
@@ -99,11 +99,14 @@ def create_output_montage(
 
 def log_loss(run: Optional[Run], avg_loss: np.ndarray, prefix: str) -> None:
     if run is not None:
+
         run[f"{prefix}_loss_sum"].log(avg_loss[0])
         run[f"{prefix}_loss_delta_noise"].log(avg_loss[1])
         run[f"{prefix}_loss_beta"].log(avg_loss[2])
         run[f"{prefix}_loss_KL"].log(avg_loss[3])
         run[f"{prefix}_loss_gamma"].log(avg_loss[4])
+    if len(avg_loss) == 6:
+        run[f"{prefix}_loss_mean"].log(avg_loss[5])
 
 
 def log_metrics(
@@ -117,6 +120,8 @@ def log_metrics(
 def save_weighs(
     run: Optional[Run], model: Model, step: int, output_path: str, run_id: str
 ) -> None:
+    weights_dir = f"{output_path}/weights"
+    os.makedirs(weights_dir, exist_ok=True)
 
     model.save_weights(f"{output_path}/weights/model_{str(step)}_{run_id}.h5", True)
 
@@ -135,16 +140,15 @@ def save_output_montage(
     prefix: str,
     cmap: Optional[str] = None,
 ) -> None:
+    output_dir = f"{output_path}/images"
+    os.makedirs(output_dir, exist_ok=True)
 
-    plt.imsave(
-        f"{output_path}/images/{prefix}_output_{str(step)}_{run_id}.png",
-        output_montage,
-        cmap=cmap,
-    )
+    image_path = f"{output_dir}/{prefix}_output_{str(step)}_{run_id}.png"
+    plt.imsave(image_path, output_montage, cmap=cmap)
 
     if run is not None:
         run[f"{prefix}_images"].append(
-            File(f"{output_path}/images/{prefix}_output_{str(step)}_{run_id}.png"),
+            File(image_path),
             description=f"Step {step}, {prefix}",
         )
 
@@ -156,9 +160,9 @@ def obtain_output_montage_and_metrics(
     schedule_model: Model,
     mu_model: Optional[Model],
     generation_timesteps: int,
+    diff_inp: bool,
     task: str,
 ) -> Tuple[np.ndarray, Dict]:
-    diff_inp = task in ["biosr_sr", "imagenet_sr"]
 
     pred_diff, gamma_vec, _ = ddpm_obtain_sr_img(
         batch_x,

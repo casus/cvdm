@@ -47,7 +47,8 @@ def main() -> None:
         "biosr_phase",
         "imagenet_phase",
         "hcoco_phase",
-    ], "Possible tasks are: biosr_sr, imagenet_sr, biosr_phase, imagenet_phase, hcoco_phase"
+        "other",
+    ], "Possible tasks are: biosr_sr, imagenet_sr, biosr_phase, imagenet_phase, hcoco_phase, other"
 
     print("Getting data...")
     batch_size = data_config.batch_size
@@ -58,7 +59,7 @@ def main() -> None:
     generation_timesteps = eval_config.generation_timesteps
 
     print("Creating model...")
-    noise_model, joint_model, schedule_model = instantiate_cvdm(
+    noise_model, joint_model, schedule_model, mu_model = instantiate_cvdm(
         lr=0.0,
         generation_timesteps=generation_timesteps,
         cond_shape=x_shape,
@@ -67,6 +68,8 @@ def main() -> None:
     )
     if model_config.load_weights is not None:
         joint_model.load_weights(model_config.load_weights)
+    if model_config.load_mu_weights is not None and mu_model is not None:
+        mu_model.load_weights(model_config.load_mu_weights)
 
     run = None
     if args.neptune_token is not None and neptune_config is not None:
@@ -78,14 +81,16 @@ def main() -> None:
         run["config.yaml"].upload(args.config_path)
 
     output_path = eval_config.output_path
+    diff_inp = model_config.diff_inp
 
     cumulative_loss = np.zeros(5)
     run_id = str(uuid.uuid4())
     step = 0
     for batch in dataset:
         batch_x, batch_y = batch
-        diff_inp = task in ["biosr_sr", "imagenet_sr"]
-        cmap = "gray" if task in ["biosr_phase", "imagenet_phase", "hcoco_phase"] else None
+        cmap = (
+            "gray" if task in ["biosr_phase", "imagenet_phase", "hcoco_phase"] else None
+        )
         model_input = prepare_model_input(batch_x, batch_y, diff_inp=diff_inp)
         cumulative_loss += joint_model.evaluate(
             model_input, np.zeros_like(batch_y), verbose=0
@@ -97,7 +102,9 @@ def main() -> None:
                 batch_y.numpy(),
                 noise_model,
                 schedule_model,
+                mu_model,
                 generation_timesteps,
+                diff_inp,
                 task,
             )
             log_metrics(run, metrics, prefix="val")

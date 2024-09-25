@@ -2,7 +2,7 @@ from typing import Iterator, Tuple
 
 import numpy as np
 
-from cvdm.utils.data_utils import center_crop, sample_norm_01
+from cvdm.utils.data_utils import center_crop
 
 
 class NpyDataloader:
@@ -12,9 +12,7 @@ class NpyDataloader:
         n_samples: int,
         im_size: int,
     ) -> None:
-        # TODO: handle the channels better?
-        self._x = np.load(f"{path}/x.npy", mmap_mode="r+")[:n_samples][..., 0:1]
-        print(self._x.shape)
+        self._x = np.load(f"{path}/x.npy", mmap_mode="r+")[:n_samples]
         self._y = np.load(f"{path}/y.npy", mmap_mode="r+")[:n_samples]
         self._im_size = im_size
         self._n_samples: int = min(n_samples, self._x.shape[0])
@@ -22,11 +20,14 @@ class NpyDataloader:
     def __len__(self) -> int:
         return self._n_samples
 
+    def get_channels(self) -> Tuple[int, int]:
+        return self._x.shape[-1], self._y.shape[-1]
+
     def __getitem__(self, idx: int) -> Tuple[np.ndarray, np.ndarray]:
         x, y = self._x[idx], self._y[idx]
 
-        x = sample_norm_01(center_crop(x, crop_size=2000))
-        y = sample_norm_01(center_crop(y, crop_size=2000))
+        x = center_crop(x, crop_size=2000)
+        y = center_crop(y, crop_size=2000)
         if x.shape[0] > self._im_size or x.shape[1] > self._im_size:
             center_x = np.random.randint(
                 self._im_size // 2, x.shape[1] - self._im_size // 2

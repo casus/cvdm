@@ -1,10 +1,7 @@
-from typing import Iterator, List, Tuple
+from typing import Iterator, Tuple
 
 import cv2
 import numpy as np
-from PIL import Image
-from skimage.transform import resize
-from sklearn.feature_extraction.image import extract_patches_2d
 
 from cvdm.utils.data_utils import read_and_patch_image_from_filename
 from cvdm.utils.phase_utils import FresnelPropagator

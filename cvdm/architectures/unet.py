@@ -4,12 +4,10 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import (
     Add,
-    Attention,
     Concatenate,
     Conv2D,
     Conv2DTranspose,
     Input,
-    Lambda,
     MaxPooling2D,
 )
 from tensorflow.keras.models import Model
@@ -245,5 +243,4 @@ def UNet(
         model = Model(inputs, conv10)
         return model
     else:
-        print("convs")
         return conv10, conv5

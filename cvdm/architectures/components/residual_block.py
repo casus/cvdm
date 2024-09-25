@@ -6,10 +6,6 @@ from tensorflow.keras.activations import swish
 from tensorflow.keras.layers import Concatenate, Conv2D, Dropout
 from tensorflow_addons.layers import GroupNormalization
 
-from cvdm.architectures.components.conditional_instance_normalization import (
-    ConditionalInstanceNormalization,
-)
-
 
 def resblock(
     x: tf.Tensor, noise_embedding: tf.Tensor, n_out_channels: int, dropout: float = 0.0
