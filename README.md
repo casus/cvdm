@@ -1,6 +1,6 @@
 # Conditional Variational Diffusion Models
 
-This code implements the Conditional Variational Diffusion Models as described [in the paper](https://arxiv.org/abs/2312.02246).
+Diffusion models have become popular for their ability to solve complex problems where hidden information needs to be estimated from observed data. Among others, their use is popular in image generation tasks. These models rely on a key hyperparameter of the variance schedule that impacts how well they learn, but recent work shows that allowing the model to automatically learn this hyperparameter can improve both performance and efficiency. Our CVDM package implements Conditional Variational Diffusion Models (CVDM) as described [in the paper](https://arxiv.org/abs/2312.02246) that build on this idea, with the addition of [Zero-Mean Diffusion (ZMD)](https://arxiv.org/pdf/2406.04388), a technique that enhances performance in certain imaging tasks, aiming to make these approaches more accessible to researchers.
 
 ## Where to get the data?
 
@@ -14,33 +14,44 @@ It is assumed that for:
 - BioSR phase task, data can be found in the directory specified as dataset_path in configs/biosr_phase.yaml, in one file, y.npy (ground truth). Input to the model will be generated based on the ground truth.
 - ImageNet super-resolution task, data can be found in the directory specified as dataset_path in configs/imagenet_sr.yaml as a collection of JPEG files. Input to the model will be generated based on the ground truth.
 - ImageNet phase task, data can be found in the directory specified as dataset_path in configs/imagenet_phase.yaml as a collection of JPEG files. Input to the model will be generated based on the ground truth.
-- HCOCO phase evaluation task, data can be found in the directory specified as dataset_path in configs/hcoco_phase_eval.yaml as a collection of JPEG files. Input to the model will be generated based on the ground truth.
+- HCOCO phase evaluation task, data can be found in the directory specified as dataset_path in configs/hcoco_phase.yaml as a collection of JPEG files. Input to the model will be generated based on the ground truth.
 
 ## How to prepare environment?
 
-Run the following code:
+
+We provide a Dockerfile to prepare the environment. Run the following code in the root of this repository:
 ```
-conda create -n myenv python=3.10
-conda activate myenv
-pip install -r requirements.txt
-pip install -e .
+docker build -t my-image .
+docker run -it my-image
 ```
+Inside the image run:
+```
+eval "$(micromamba shell hook --shell bash)"
+micromamba activate cvdm
+```
+
+If you encounter issues with cupy installation (required only for the phase tasks) such as [these](https://github.com/cupy/cupy/issues/8466), you can modify the `cvdm/utils/phase_utils.py` to use pure numpy.
 
 ## How to run the training code?
 
-1. Download the data. 
-1. Modify the config in `configs/` directory with the path to the data you want to use and the directory for outputs.
-2. Run the code from the root directory: `python scripts/train.py --config-path $PATH_TO_CONFIG --neptune-token $NEPTUNE_TOKEN`.
+1. Download the data or use the sample data available in the data/ directory. The sample data is a fraction of the ImageNet dataset and can be used with configs `imagenet_sr_sample.yaml` or `imagenet_phase_sample.yaml`. You can also use your own data as long as it is in ".npy" format. To do so, use the task type "other".
+2. Modify the config in `configs/` directory with the path to the data you want to use and the directory for outputs. For the description of each parameter, check the documentation in `cvdm/configs/` files.
+3. Run the code from the root directory: `python scripts/train.py --config-path $PATH_TO_CONFIG --neptune-token $NEPTUNE_TOKEN`.
 
 `--neptune-token` argument is optional.
 
-## How to run the training code?
+
+## How to run the evaluation code?
 
 1. Download the data. 
 1. Modify the config in `configs/` directory with the path to the data you want to use and the directory for outputs.
 2. Run the code from the root directory: `python scripts/eval.py --config-path $PATH_TO_CONFIG --neptune-token $NEPTUNE_TOKEN`.
 
 `--neptune-token` argument is optional.
+
+## How to contribute?
+
+To contribute to the software or seek support, please leave an issue or pull request.
 
 ## License
 This repository is released under the MIT License (refer to the LICENSE file for details).

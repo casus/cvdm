@@ -32,6 +32,11 @@ tf.keras.utils.set_random_seed(42)
 
 
 def main() -> None:
+
+    # The script accepts the following command-line arguments:
+    # - `--config-path`: The path to the YAML configuration file (required).
+    # - `--neptune-token`: The API token for Neptune (optional).
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--config-path", help="Path to the configuration file", required=True

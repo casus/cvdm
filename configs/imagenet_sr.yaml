@@ -28,5 +28,5 @@ data:
   im_size: 256
 
 neptune:
-  name: "Virtual_Stain"
+  name: "CVDM"
   project: "mlid/test"
