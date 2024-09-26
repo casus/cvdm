@@ -7,6 +7,7 @@ model:
   load_mu_weights: null
   snr_expansion_n: 1
   zmd: True
+  diff_inp: False
 
 training:
   lr: 0.0001

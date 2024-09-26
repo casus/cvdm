@@ -99,14 +99,28 @@ def create_output_montage(
 
 def log_loss(run: Optional[Run], avg_loss: np.ndarray, prefix: str) -> None:
     if run is not None:
-
         run[f"{prefix}_loss_sum"].log(avg_loss[0])
         run[f"{prefix}_loss_delta_noise"].log(avg_loss[1])
         run[f"{prefix}_loss_beta"].log(avg_loss[2])
         run[f"{prefix}_loss_KL"].log(avg_loss[3])
         run[f"{prefix}_loss_gamma"].log(avg_loss[4])
-    if len(avg_loss) == 6:
-        run[f"{prefix}_loss_mean"].log(avg_loss[5])
+        if len(avg_loss) == 6:
+            run[f"{prefix}_loss_mean"].log(avg_loss[5])
+    else:
+        loss_labels = [
+            "Loss Sum",
+            "Delta Noise Loss",
+            "Beta Loss",
+            "KL Loss",
+            "Gamma Loss",
+        ]
+        formatted_losses = [
+            f"{label}: {loss:.6f}" for label, loss in zip(loss_labels, avg_loss[:5])
+        ]
+        for loss in formatted_losses:
+            print(loss)
+        if len(avg_loss) == 6:
+            print(f"Mean Loss: {avg_loss[5]:.6f}")
 
 
 def log_metrics(
@@ -115,20 +129,37 @@ def log_metrics(
     if run is not None:
         for metric_name, metric_value in metrics_dict.items():
             run[f"{prefix}_" + metric_name].log(metric_value)
+    else:
+        print(f"{prefix.capitalize()} Metrics:")
+        for metric_name, metric_value in metrics_dict.items():
+            print(f"{metric_name}: {metric_value:.6f}")
 
 
-def save_weighs(
-    run: Optional[Run], model: Model, step: int, output_path: str, run_id: str
+def save_weights(
+    run: Optional[Run],
+    model: Model,
+    mu_model: Optional[Model],
+    step: int,
+    output_path: str,
+    run_id: str,
 ) -> None:
     weights_dir = f"{output_path}/weights"
     os.makedirs(weights_dir, exist_ok=True)
 
-    model.save_weights(f"{output_path}/weights/model_{str(step)}_{run_id}.h5", True)
+    model_weights_path = f"{weights_dir}/model_{str(step)}_{run_id}.h5"
+    model.save_weights(model_weights_path, True)
 
     if run is not None:
-        run[f"model_weights/model_{str(step)}.h5"].upload(
-            f"{output_path}/weights/model_{str(step)}_{run_id}.h5"
-        )
+        run[f"model_weights/model_{str(step)}.h5"].upload(model_weights_path)
+
+    if mu_model is not None:
+        mu_model_weights_path = f"{weights_dir}/mu_model_{str(step)}_{run_id}.h5"
+        mu_model.save_weights(mu_model_weights_path, True)
+
+        if run is not None:
+            run[f"mu_model_weights/mu_model_{str(step)}.h5"].upload(
+                mu_model_weights_path
+            )
 
 
 def save_output_montage(

@@ -20,7 +20,7 @@ from cvdm.utils.inference_utils import (
     log_metrics,
     obtain_output_montage_and_metrics,
     save_output_montage,
-    save_weighs,
+    save_weights,
 )
 from cvdm.utils.training_utils import (
     prepare_dataset,
@@ -105,7 +105,7 @@ def main() -> None:
     val_freq = eval_config.val_freq
     output_path = eval_config.output_path
     diff_inp = model_config.diff_inp
-    
+
     print("Starting training...")
     if model_config.zmd:
         cumulative_loss = np.zeros(6)
@@ -126,9 +126,10 @@ def main() -> None:
                 log_loss(run=run, avg_loss=cumulative_loss / (step + 1), prefix="train")
 
             if step % checkpoint_freq == 0:
-                save_weighs(
+                save_weights(
                     run=run,
                     model=joint_model,
+                    mu_model=mu_model,
                     step=step,
                     output_path=output_path,
                     run_id=run_id,

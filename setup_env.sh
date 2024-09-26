@@ -31,6 +31,6 @@ pip3 install tensorflow-addons==0.23.0
 pip3 install cupy-cuda12x==13.3.0
 
 
-python -m pip install . --user
+python -m pip install .
 
 echo "Pip packages installed."

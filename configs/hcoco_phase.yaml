@@ -1,4 +1,4 @@
-task: "biosr_phase"
+task: "hcoco_phase"
 
 model:
   noise_model_type: "unet"
@@ -7,14 +7,14 @@ model:
   load_mu_weights: null
   snr_expansion_n: 1
   zmd: False
-  diff_inp: True
+  diff_inp: False
 
 training:
   lr: 0.0001
-  epochs: 10
+  epochs: 100
   
 eval:
-  output_path: "outputs/biosr"
+  output_path: "outputs/hcoco"
   generation_timesteps: 200
   checkpoint_freq: 1000
   log_freq: 10
@@ -23,7 +23,7 @@ eval:
   val_len: 100
 
 data:
-  dataset_path: "/bigdata/casus/MLID/maria/biosr_sample"
+  dataset_path: "/bigdata/casus/MLID/maria/hcoco_sample"
   n_samples: 100
   batch_size: 2
   im_size: 256

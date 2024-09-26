@@ -7,6 +7,7 @@ model:
   load_mu_weights: null
   snr_expansion_n: 1
   zmd: False
+  diff_inp: False
 
 training:
   lr: 0.0001
@@ -14,7 +15,7 @@ training:
   
 eval:
   output_path: "outputs/biosr"
-  generation_timesteps: 1000
+  generation_timesteps: 200
   checkpoint_freq: 1000
   log_freq: 10
   image_freq: 100

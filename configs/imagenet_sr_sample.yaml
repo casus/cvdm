@@ -1,5 +1,4 @@
-task: "hcoco_phase"
-
+task: "imagenet_sr"
 model:
   noise_model_type: "unet"
   alpha: 0.001
@@ -7,24 +6,25 @@ model:
   load_mu_weights: null
   snr_expansion_n: 1
   zmd: False
+  diff_inp: True
 
 training:
   lr: 0.0001
   epochs: 100
   
 eval:
-  output_path: "outputs/hcoco"
-  generation_timesteps: 1000
+  output_path: "outputs/imagenet"
+  generation_timesteps: 200
   checkpoint_freq: 1000
   log_freq: 10
-  image_freq: 100
-  val_freq: 200
-  val_len: 100
-
+  image_freq: 1000
+  val_freq: 2000
+  val_len: 10
+  
 data:
-  dataset_path: "/bigdata/casus/MLID/maria/hcoco_sample"
+  dataset_path: "data/imnet_sample"
   n_samples: 100
-  batch_size: 1
+  batch_size: 2
   im_size: 256
 
 neptune:
