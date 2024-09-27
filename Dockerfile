@@ -49,6 +49,7 @@ RUN micromamba create -n $ENV_NAME -y && \
     /usr/local/bin/micromamba run -n $ENV_NAME pip3 install opencv-python==4.9.0.80 \
     tensorflow-addons==0.23.0 \
     cupy-cuda12x==13.3.0 \
+    mypy \
     pytest && \
     /usr/local/bin/micromamba run -n $ENV_NAME python -m pip install .
 

@@ -36,3 +36,8 @@ jobs:
     - name: Test with pytest
       run: |
         docker run --rm cvdm-package:${{ matrix.python-version }} pytest
+
+    # Step 5: Run the container and execute tests using mypy
+    - name: Test with mypy
+      run: |
+        docker run --rm cvdm-package:${{ matrix.python-version }} mypy .

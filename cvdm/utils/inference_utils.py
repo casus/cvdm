@@ -90,6 +90,7 @@ def create_output_montage(
             (pred_y, y, gamma_vec),
             axis=2,
         )
+    print(concatenated_images.shape)
     image: np.ndarray = montage(
         np.squeeze(concatenated_images),
         channel_axis=channel_axis,
