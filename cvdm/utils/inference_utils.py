@@ -1,7 +1,7 @@
+import os
 from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
-import tensorflow as tf
 from matplotlib import pyplot as plt
 from neptune import Run
 from neptune.types import File
@@ -17,13 +17,15 @@ def ddpm_obtain_sr_img(
     timesteps_test: int,
     noise_model: Model,
     schedule_model: Model,
+    mu_model: Optional[Model],
     out_shape: Optional[Tuple[int, ...]] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     if out_shape == None:
         out_shape = x.shape
     assert out_shape is not None
     pred_sr = np.random.normal(0, 1, out_shape)
-
+    if mu_model is not None:
+        mu_pred = mu_model.predict(x, verbose=0)[0]
     alpha_vec = np.zeros(out_shape + (timesteps_test,))
     for t in tqdm(range(timesteps_test)):
         t_inp = np.clip(
@@ -53,11 +55,18 @@ def ddpm_obtain_sr_img(
                 + np.sqrt(1 - gamma_t - beta_factor) * pred_noise
                 + np.sqrt(beta_factor) * z
             )
-        pred_noise = noise_model.predict([pred_sr, x, gamma_t], verbose=0)
+        if mu_model is not None:
+            pred_noise = noise_model.predict([pred_sr, x, mu_pred, gamma_t], verbose=0)
+        else:
+            pred_noise = noise_model.predict([pred_sr, x, gamma_t], verbose=0)
         pred_sr = (pred_sr - np.sqrt(1 - gamma_t) * pred_noise) / np.sqrt(gamma_t)
         count += 1
-
-    return pred_sr, gamma_vec, alpha_vec
+    if mu_model is not None:
+        sigma = 0.5
+        pred_diff = sigma * pred_sr + mu_pred
+    else:
+        pred_diff = pred_sr
+    return pred_diff, gamma_vec, alpha_vec
 
 
 def create_output_montage(
@@ -95,6 +104,23 @@ def log_loss(run: Optional[Run], avg_loss: np.ndarray, prefix: str) -> None:
         run[f"{prefix}_loss_beta"].log(avg_loss[2])
         run[f"{prefix}_loss_KL"].log(avg_loss[3])
         run[f"{prefix}_loss_gamma"].log(avg_loss[4])
+        if len(avg_loss) == 6:
+            run[f"{prefix}_loss_mean"].log(avg_loss[5])
+    else:
+        loss_labels = [
+            "Loss Sum",
+            "Delta Noise Loss",
+            "Beta Loss",
+            "KL Loss",
+            "Gamma Loss",
+        ]
+        formatted_losses = [
+            f"{label}: {loss:.6f}" for label, loss in zip(loss_labels, avg_loss[:5])
+        ]
+        for loss in formatted_losses:
+            print(loss)
+        if len(avg_loss) == 6:
+            print(f"Mean Loss: {avg_loss[5]:.6f}")
 
 
 def log_metrics(
@@ -103,18 +129,37 @@ def log_metrics(
     if run is not None:
         for metric_name, metric_value in metrics_dict.items():
             run[f"{prefix}_" + metric_name].log(metric_value)
+    else:
+        print(f"{prefix.capitalize()} Metrics:")
+        for metric_name, metric_value in metrics_dict.items():
+            print(f"{metric_name}: {metric_value:.6f}")
 
 
-def save_weighs(
-    run: Optional[Run], model: Model, step: int, output_path: str, run_id: str
+def save_weights(
+    run: Optional[Run],
+    model: Model,
+    mu_model: Optional[Model],
+    step: int,
+    output_path: str,
+    run_id: str,
 ) -> None:
+    weights_dir = f"{output_path}/weights"
+    os.makedirs(weights_dir, exist_ok=True)
 
-    model.save_weights(f"{output_path}/weights/model_{str(step)}_{run_id}.h5", True)
+    model_weights_path = f"{weights_dir}/model_{str(step)}_{run_id}.h5"
+    model.save_weights(model_weights_path, True)
 
     if run is not None:
-        run[f"model_weights/model_{str(step)}.h5"].upload(
-            f"{output_path}/weights/model_{str(step)}_{run_id}.h5"
-        )
+        run[f"model_weights/model_{str(step)}.h5"].upload(model_weights_path)
+
+    if mu_model is not None:
+        mu_model_weights_path = f"{weights_dir}/mu_model_{str(step)}_{run_id}.h5"
+        mu_model.save_weights(mu_model_weights_path, True)
+
+        if run is not None:
+            run[f"mu_model_weights/mu_model_{str(step)}.h5"].upload(
+                mu_model_weights_path
+            )
 
 
 def save_output_montage(
@@ -126,16 +171,15 @@ def save_output_montage(
     prefix: str,
     cmap: Optional[str] = None,
 ) -> None:
+    output_dir = f"{output_path}/images"
+    os.makedirs(output_dir, exist_ok=True)
 
-    plt.imsave(
-        f"{output_path}/images/{prefix}_output_{str(step)}_{run_id}.png",
-        output_montage,
-        cmap=cmap,
-    )
+    image_path = f"{output_dir}/{prefix}_output_{str(step)}_{run_id}.png"
+    plt.imsave(image_path, output_montage, cmap=cmap)
 
     if run is not None:
         run[f"{prefix}_images"].append(
-            File(f"{output_path}/images/{prefix}_output_{str(step)}_{run_id}.png"),
+            File(image_path),
             description=f"Step {step}, {prefix}",
         )
 
@@ -145,16 +189,18 @@ def obtain_output_montage_and_metrics(
     batch_y: np.ndarray,
     noise_model: Model,
     schedule_model: Model,
+    mu_model: Optional[Model],
     generation_timesteps: int,
+    diff_inp: bool,
     task: str,
 ) -> Tuple[np.ndarray, Dict]:
-    diff_inp = task in ["biosr_sr", "imagenet_sr"]
 
     pred_diff, gamma_vec, _ = ddpm_obtain_sr_img(
         batch_x,
         generation_timesteps,
         noise_model,
         schedule_model,
+        mu_model,
         batch_y.shape,
     )
     if diff_inp:

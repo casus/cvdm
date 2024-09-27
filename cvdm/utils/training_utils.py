@@ -24,8 +24,6 @@ def prepare_dataset(
             n_samples=data_config.n_samples,
             im_size=data_config.im_size,
         )
-        x_channels = 1
-        y_channels = x_channels
 
     elif task == "imagenet_sr":
         dataloader = ImageDirDataloader(
@@ -54,6 +52,15 @@ def prepare_dataset(
         )
         x_channels = 2
         y_channels = 1
+    elif task == "other":
+        dataloader = NpyDataloader(
+            path=data_config.dataset_path,
+            n_samples=data_config.n_samples,
+            im_size=data_config.im_size,
+        )
+        x_channels, y_channels = dataloader.get_channels()
+    else:
+        raise NotImplementedError()
 
     x_shape = tf.TensorShape([data_config.im_size, data_config.im_size, x_channels])
     y_shape = tf.TensorShape([data_config.im_size, data_config.im_size, y_channels])

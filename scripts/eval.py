@@ -1,5 +1,7 @@
 import argparse
 import uuid
+from collections import defaultdict
+from typing import Dict
 
 import neptune as neptune
 import numpy as np
@@ -47,7 +49,8 @@ def main() -> None:
         "biosr_phase",
         "imagenet_phase",
         "hcoco_phase",
-    ], "Possible tasks are: biosr_sr, imagenet_sr, biosr_phase, imagenet_phase, hcoco_phase"
+        "other",
+    ], "Possible tasks are: biosr_sr, imagenet_sr, biosr_phase, imagenet_phase, hcoco_phase, other"
 
     print("Getting data...")
     batch_size = data_config.batch_size
@@ -58,7 +61,7 @@ def main() -> None:
     generation_timesteps = eval_config.generation_timesteps
 
     print("Creating model...")
-    noise_model, joint_model, schedule_model = instantiate_cvdm(
+    noise_model, joint_model, schedule_model, mu_model = instantiate_cvdm(
         lr=0.0,
         generation_timesteps=generation_timesteps,
         cond_shape=x_shape,
@@ -67,6 +70,8 @@ def main() -> None:
     )
     if model_config.load_weights is not None:
         joint_model.load_weights(model_config.load_weights)
+    if model_config.load_mu_weights is not None and mu_model is not None:
+        mu_model.load_weights(model_config.load_mu_weights)
 
     run = None
     if args.neptune_token is not None and neptune_config is not None:
@@ -78,40 +83,55 @@ def main() -> None:
         run["config.yaml"].upload(args.config_path)
 
     output_path = eval_config.output_path
+    diff_inp = model_config.diff_inp
 
     cumulative_loss = np.zeros(5)
     run_id = str(uuid.uuid4())
     step = 0
+    cumulative_metrics: Dict[str, float] = defaultdict(float)
+    total_samples = 0
+
     for batch in dataset:
         batch_x, batch_y = batch
-        diff_inp = task in ["biosr_sr", "imagenet_sr"]
-        cmap = "gray" if task in ["biosr_phase", "imagenet_phase", "hcoco_phase"] else None
+
+        cmap = (
+            "gray" if task in ["biosr_phase", "imagenet_phase", "hcoco_phase"] else None
+        )
         model_input = prepare_model_input(batch_x, batch_y, diff_inp=diff_inp)
         cumulative_loss += joint_model.evaluate(
             model_input, np.zeros_like(batch_y), verbose=0
         )
 
-        if step % eval_config.image_freq == 0:
-            output_montage, metrics = obtain_output_montage_and_metrics(
-                batch_x,
-                batch_y.numpy(),
-                noise_model,
-                schedule_model,
-                generation_timesteps,
-                task,
-            )
-            log_metrics(run, metrics, prefix="val")
-            save_output_montage(
-                run=run,
-                output_montage=output_montage,
-                step=step,
-                output_path=output_path,
-                run_id=run_id,
-                prefix="val",
-                cmap=cmap,
-            )
+        output_montage, metrics = obtain_output_montage_and_metrics(
+            batch_x,
+            batch_y.numpy(),
+            noise_model,
+            schedule_model,
+            mu_model,
+            generation_timesteps,
+            diff_inp,
+            task,
+        )
+        for metric_name, metric_value in metrics.items():
+            cumulative_metrics[metric_name] += metric_value * batch_size
+        total_samples += batch_size
         step += 1
 
+    average_metrics = {
+        metric_name: total / total_samples
+        for metric_name, total in cumulative_metrics.items()
+    }
+
+    log_metrics(run, average_metrics, prefix="val")
+    save_output_montage(
+        run=run,
+        output_montage=output_montage,
+        step=step,
+        output_path=output_path,
+        run_id=run_id,
+        prefix="val",
+        cmap=cmap,
+    )
     print("Loss: ", cumulative_loss)
     log_loss(run=run, avg_loss=cumulative_loss / (step + 1), prefix="val")
 

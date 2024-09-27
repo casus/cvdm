@@ -5,6 +5,7 @@ import numpy as np
 from cupy.fft import fftn, fftshift, ifftn, ifftshift
 
 
+# If you encounter issues with cupy installation, you can use the numpy implementation of fft
 def easy_fft(data: np.ndarray, axes: Optional[Sequence[int]] = None) -> cp.ndarray:
     """FFT that includes shifting."""
     return fftshift(fftn(ifftshift(data, axes=axes), axes=axes), axes=axes)

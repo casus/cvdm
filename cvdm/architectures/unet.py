@@ -2,17 +2,15 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (
     Add,
-    Attention,
     Concatenate,
     Conv2D,
     Conv2DTranspose,
     Input,
-    Lambda,
     MaxPooling2D,
 )
+from tensorflow.keras.models import Model
 from tensorflow_addons.layers import InstanceNormalization
 
 

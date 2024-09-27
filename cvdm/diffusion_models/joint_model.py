@@ -1,10 +1,11 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import tensorflow as tf
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 
 from cvdm.configs.model_config import ModelConfig
+from cvdm.diffusion_models.mean_model import mean_model
 from cvdm.diffusion_models.noise_model import noise_model
 from cvdm.diffusion_models.variance_model import variance_model
 from cvdm.utils.data_utils import obtain_noisy_sample
@@ -17,7 +18,7 @@ def create_joint_model(
     timesteps: int,
     out_channels: int,
     model_config: ModelConfig,
-) -> Tuple[Model, Model, Model]:
+) -> Tuple[Model, Model, Model, Optional[Model]]:
     """This function creates a Keras model for the image denoising pipeline."""
 
     ground_truth = Input(input_shape_condition[:-1] + (out_channels,))
@@ -32,13 +33,39 @@ def create_joint_model(
     sch_params_Lt = sch_model([dirty_img, timesteps_Lt])
     sch_params_L0 = sch_model([dirty_img, timesteps_L0])
 
-    n_model = noise_model(
-        input_shape_condition, out_channels, model_type=model_config.noise_model_type
-    )
+    if model_config.zmd:
+        pass
 
-    n_sample_LT = Lambda(obtain_noisy_sample)([ground_truth, sch_params_LT[0]])
-    n_sample_Lt = Lambda(obtain_noisy_sample)([ground_truth, sch_params_Lt[0]])
-    pred_noise_Lt = n_model([n_sample_Lt[0], dirty_img, sch_params_Lt[0]])
+        sigma = 0.5
+        n_model = noise_model(
+            input_shape_condition,
+            out_channels,
+            model_type=model_config.noise_model_type,
+            zmd=model_config.zmd,
+        )
+        mu_model = mean_model(input_shape_condition, out_channels)
+        mean_pred = mu_model(dirty_img)[0]
+        mean_pred_sg = tf.stop_gradient(mean_pred)
+        n_sample_LT = Lambda(obtain_noisy_sample)(
+            [(ground_truth - mean_pred_sg) / sigma, sch_params_LT[0]]
+        )
+        n_sample_Lt = Lambda(obtain_noisy_sample)(
+            [(ground_truth - mean_pred_sg) / sigma, sch_params_Lt[0]]
+        )
+        pred_noise_Lt = n_model(
+            [n_sample_Lt[0], dirty_img, mean_pred_sg, sch_params_Lt[0]]
+        )
+
+    else:
+        n_model = noise_model(
+            input_shape_condition,
+            out_channels,
+            model_type=model_config.noise_model_type,
+        )
+
+        n_sample_LT = Lambda(obtain_noisy_sample)([ground_truth, sch_params_LT[0]])
+        n_sample_Lt = Lambda(obtain_noisy_sample)([ground_truth, sch_params_Lt[0]])
+        pred_noise_Lt = n_model([n_sample_Lt[0], dirty_img, sch_params_Lt[0]])
 
     d_alpha_t = Lambda(time_grad)([sch_params_Lt[0], timesteps_Lt])
 
@@ -64,12 +91,21 @@ def create_joint_model(
         + tf.square(sch_params_LT[0])
     )
     L_gamma = model_config.alpha * tf.square(d2_alpha_n_t)
-    joint_model: Model = Model(
-        [ground_truth, dirty_img, timesteps_Lt],
-        [delta_noise, L_beta, kl_divergence_T, L_gamma],
-    )
-    joint_model.summary()
-    return n_model, joint_model, sch_model
+    joint_model: Model
+    if model_config.zmd:
+        delta_mean = tf.square(ground_truth - mean_pred)
+        joint_model = Model(
+            [ground_truth, dirty_img, timesteps_Lt],
+            [delta_noise, L_beta, kl_divergence_T, L_gamma, delta_mean],
+        )
+        return n_model, joint_model, sch_model, mu_model
+    else:
+        joint_model = Model(
+            [ground_truth, dirty_img, timesteps_Lt],
+            [delta_noise, L_beta, kl_divergence_T, L_gamma],
+        )
+        joint_model.summary()
+        return n_model, joint_model, sch_model, None
 
 
 def instantiate_cvdm(
@@ -78,12 +114,22 @@ def instantiate_cvdm(
     cond_shape: tf.TensorShape,
     out_shape: tf.TensorShape,
     model_config: ModelConfig,
-) -> Tuple[Model, Model, Model]:
+) -> Tuple[Model, Model, Model, Optional[Model]]:
     opt_m = tf.keras.optimizers.Adam(learning_rate=lr)
     out_channels = out_shape[-1]
     assert out_channels is not None
-    noise_model, joint_model, schedule_model = create_joint_model(
-        cond_shape, generation_timesteps, out_channels, model_config
-    )
-    joint_model.compile(loss=linear_loss, loss_weights=[1, 2, 2, 2], optimizer=opt_m)  # type: ignore
-    return noise_model, joint_model, schedule_model
+
+    if model_config.zmd:
+        models = create_joint_model(
+            cond_shape, generation_timesteps, out_channels, model_config
+        )
+        noise_model, joint_model, schedule_model, mu_model = models
+        joint_model.compile(loss=linear_loss, loss_weights=[1, 2, 2, 2, 2], optimizer=opt_m)  # type: ignore
+    else:
+        models = create_joint_model(
+            cond_shape, generation_timesteps, out_channels, model_config
+        )
+        noise_model, joint_model, schedule_model, _ = models
+        joint_model.compile(loss=linear_loss, loss_weights=[1, 2, 2, 2], optimizer=opt_m)  # type: ignore
+
+    return models

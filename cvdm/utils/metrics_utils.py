@@ -1,4 +1,5 @@
 from typing import Dict, Optional
+
 import numpy as np
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
@@ -8,24 +9,9 @@ def nmae(y_pred: np.ndarray, y_real: np.ndarray) -> float:
     return nmae
 
 
-def dice(y_pred_masks: np.ndarray, y_real_masks: np.ndarray) -> float:
-    intersection = np.sum(y_pred_masks * y_real_masks)
-    dice: float = intersection * 2.0 / (np.sum(y_real_masks) + np.sum(y_pred_masks))
-    return dice
-
-
-def iou(y_pred_masks: np.ndarray, y_real_masks: np.ndarray) -> float:
-    intersection = np.sum(y_pred_masks * y_real_masks)
-    union = np.sum(y_real_masks + y_pred_masks) - intersection
-    iou: float = intersection / union
-    return iou
-
-
 def calculate_metrics(
     y_pred_batch: np.ndarray,
     y_real_batch: np.ndarray,
-    y_pred_masks_batch: Optional[np.ndarray] = None,
-    y_real_masks_batch: Optional[np.ndarray] = None,
 ) -> Dict[str, float]:
     y_pred_batch = np.array(y_pred_batch)
     y_real_batch = np.array(y_real_batch)
@@ -65,10 +51,5 @@ def calculate_metrics(
             ]
         ),
     }
-
-    # Optional mask-related metrics
-    if y_pred_masks_batch is not None and y_real_masks_batch is not None:
-        metrics["dice"] = np.mean(dice(y_pred_masks_batch, y_real_masks_batch))
-        metrics["iou"] = np.mean(iou(y_pred_masks_batch, y_real_masks_batch))
 
     return metrics

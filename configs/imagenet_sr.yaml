@@ -3,7 +3,10 @@ model:
   noise_model_type: "unet"
   alpha: 0.001
   load_weights: null
+  load_mu_weights: null
   snr_expansion_n: 1
+  zmd: False
+  diff_inp: True
 
 training:
   lr: 0.0001
@@ -11,7 +14,7 @@ training:
   
 eval:
   output_path: "outputs/imagenet"
-  generation_timesteps: 1000
+  generation_timesteps: 200
   checkpoint_freq: 1000
   log_freq: 10
   image_freq: 100
@@ -19,11 +22,11 @@ eval:
   val_len: 100
   
 data:
-  dataset_path: "/bigdata/casus/MLID/maria/imagenet_sample"
+  dataset_path: "/bigdata/imnet"
   n_samples: 100
   batch_size: 2
   im_size: 256
 
 neptune:
-  name: "Virtual_Stain"
+  name: "CVDM"
   project: "mlid/test"

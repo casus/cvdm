@@ -1,8 +1,9 @@
 import contextlib
 from typing import Any, Dict, Iterator
+
 import tensorflow as tf
-from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Activation, Input
+from tensorflow.keras.models import Model
 
 from cvdm.architectures.unet import UNet
 from cvdm.diffusion_models.time_model import time_model
