@@ -20,9 +20,11 @@ class ImageDirDataloader:
         img_patch = read_and_patch_image_from_filename(filename, self._im_size)
 
         patch_LR = img_patch.resize(
-            (self._im_size // 4, self._im_size // 4), Image.LANCZOS
+            (self._im_size // 4, self._im_size // 4), Image.Resampling.LANCZOS
         )
-        err_HR = patch_LR.resize((self._im_size, self._im_size), Image.LANCZOS)
+        err_HR = patch_LR.resize(
+            (self._im_size, self._im_size), Image.Resampling.LANCZOS
+        )
         img_patch_arr = np.array(img_patch)
         err_HR_arr = np.array(err_HR)
         return (err_HR_arr / 255.0) * 2 - 1, (img_patch_arr / 255.0) * 2 - 1

@@ -13,7 +13,7 @@ def read_and_patch_image_from_filename(filename: str, im_size: int) -> Image.Ima
 
     if img_reg.shape[0] < im_size or img_reg.shape[1] < im_size:
         img_patch = Image.fromarray(img_reg)
-        img_patch = img_patch.resize((im_size, im_size), Image.LANCZOS)
+        img_patch = img_patch.resize((im_size, im_size), Image.Resampling.LANCZOS)   
     else:
         img_patch = extract_patches_2d(img_reg, (im_size, im_size), max_patches=1)[0]
         img_patch = Image.fromarray(img_patch)
