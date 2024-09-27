@@ -16,22 +16,22 @@ authors = [
     {name = "Artur Yakimovich"}
 ]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 license = {text = "MIT"}
 urls = {homepage = "https://github.com/casus/cvdm"}
 
 dependencies = [
-    "tensorflow==2.15.0",
-    "keras==2.15.0",
-    "matplotlib==3.8.0",
-    "tqdm==4.65.0",
-    "scikit-learn==1.4.2",
-    "scikit-image==0.22.0",
-    "einops==0.7.0",
-    "neptune==1.10.2",
-    "opencv-python==4.9.0.80",
-    "tensorflow-addons==0.23.0",
-    "cupy-cuda12x==13.3.0"
+    "tensorflow>=2.15.0",
+    "keras>=2.15.0",
+    "matplotlib>=3.8.0",
+    "tqdm>=4.65.0",
+    "scikit-learn>=1.4.2",
+    "scikit-image>=0.22.0",
+    "einops>=0.7.0",
+    "neptune>=1.10.2",
+    "opencv-python>=4.9.0.80",
+    "tensorflow-addons>=0.23.0",
+    "cupy-cuda12x>=13.3.0"
 ]
 
 [tool.setuptools.packages.find]
