@@ -1,0 +1,36 @@
+name: Docker-based Python Package CI
+
+# Trigger the workflow on push to master or dev branches
+on:
+  push:
+    branches: [ "master", "dev" ]
+  pull_request:
+    branches: [ "master", "dev" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+    # Step 1: Checkout the repository
+    - uses: actions/checkout@v3
+
+    # Step 2: Set up Docker Buildx (optional)
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    # Step 3: Build the Docker image
+    - name: Build Docker image
+      run: |
+        docker build --build-arg PYTHON_VERSION=${{ matrix.python-version }} -t cvdm-package:${{ matrix.python-version }} .
+
+    # Step 4: Run the container and execute tests using pytest
+    - name: Test with pytest
+      run: |
+        docker run --rm cvdm-package:${{ matrix.python-version }} pytest
