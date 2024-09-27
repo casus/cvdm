@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
 # Set up micromamba environment, install dependencies and pip packages
 RUN micromamba create -n $ENV_NAME -y && \
     micromamba install -n $ENV_NAME \
-    tensorflow-gpu==2.15.0 \
+    tensorflow==2.15.0 \
     keras==2.15.* \
     matplotlib==3.8.0 \
     tqdm==4.65.0 \
