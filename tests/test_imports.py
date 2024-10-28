@@ -36,3 +36,5 @@ def test_imports():
 
     except ImportError as e:
         assert False, f"Import failed: {e}"
+
+test_imports()

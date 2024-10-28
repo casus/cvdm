@@ -44,6 +44,8 @@ venv/
 # Data & models
 data/
 models/
+.neptune/*
+outputs/*
 
 # Exclude 'imnet_sample' from being ignored
 !data/imnet_sample/

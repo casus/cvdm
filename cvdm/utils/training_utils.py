@@ -7,23 +7,25 @@ from tensorflow.keras.models import Model
 
 from cvdm.configs.data_config import DataConfig
 from cvdm.data.image_dir_dataloader import ImageDirDataloader
-from cvdm.data.npy_dataloader import NpyDataloader
+from cvdm.data.biosr_dataloader import BioSRDataloader
 from cvdm.data.phase_2shot_dataloader import Phase2ShotDataloader
 from cvdm.data.phase_polychrome_dataloader import PhasePolychromeDataloader
 
 
 def prepare_dataset(
-    task: str, data_config: DataConfig, training: bool
+        task: str, data_config: DataConfig, training: bool
 ) -> Tuple[tf.data.Dataset, tf.TensorShape, tf.TensorShape]:
     dataloader: Callable[
         [], Iterator[Tuple[np.ndarray[Any, Any], np.ndarray[Any, Any]]]
     ]
     if task == "biosr_sr":
-        dataloader = NpyDataloader(
+        dataloader = BioSRDataloader(
             path=data_config.dataset_path,
             n_samples=data_config.n_samples,
             im_size=data_config.im_size,
         )
+        x_channels = 1
+        y_channels = x_channels
 
     elif task == "imagenet_sr":
         dataloader = ImageDirDataloader(
@@ -53,12 +55,8 @@ def prepare_dataset(
         x_channels = 2
         y_channels = 1
     elif task == "other":
-        dataloader = NpyDataloader(
-            path=data_config.dataset_path,
-            n_samples=data_config.n_samples,
-            im_size=data_config.im_size,
-        )
-        x_channels, y_channels = dataloader.get_channels()
+        print('Experiment not found')
+        raise NotImplementedError()
     else:
         raise NotImplementedError()
 
@@ -76,7 +74,7 @@ def prepare_dataset(
 
 
 def prepare_model_input(
-    x: np.ndarray, y: np.ndarray, diff_inp: bool = False
+        x: np.ndarray, y: np.ndarray, diff_inp: bool = False
 ) -> List[np.ndarray]:
     if diff_inp:
         dfy = y - x
@@ -88,7 +86,7 @@ def prepare_model_input(
 
 
 def train_on_batch_cvdm(
-    batch_x: np.ndarray, batch_y: np.ndarray, joint_model: Model, diff_inp: bool = False
+        batch_x: np.ndarray, batch_y: np.ndarray, joint_model: Model, diff_inp: bool = False
 ) -> np.ndarray:
     model_input = prepare_model_input(batch_x, batch_y, diff_inp)
     loss = joint_model.train_on_batch(model_input, np.zeros_like(batch_y))

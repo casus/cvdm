@@ -69,8 +69,12 @@ def main() -> None:
         model_config=model_config,
     )
     if model_config.load_weights is not None:
+        print('weights loaded...')
         joint_model.load_weights(model_config.load_weights)
+    else:
+        print('no weights loaded...')
     if model_config.load_mu_weights is not None and mu_model is not None:
+        print('weights loaded...')
         mu_model.load_weights(model_config.load_mu_weights)
 
     run = None
@@ -88,21 +92,19 @@ def main() -> None:
     cumulative_loss = np.zeros(5)
     run_id = str(uuid.uuid4())
     step = 0
-    cumulative_metrics: Dict[str, float] = defaultdict(float)
-    total_samples = 0
 
     for batch in dataset:
         batch_x, batch_y = batch
 
         cmap = (
-            "gray" if task in ["biosr_phase", "imagenet_phase", "hcoco_phase"] else None
+            "gray" if task in ["biosr_sr", "biosr_phase", "imagenet_phase", "hcoco_phase"] else None
         )
         model_input = prepare_model_input(batch_x, batch_y, diff_inp=diff_inp)
         cumulative_loss += joint_model.evaluate(
             model_input, np.zeros_like(batch_y), verbose=0
         )
-
-        output_montage, metrics = obtain_output_montage_and_metrics(
+        # TODO: add meaningful metrics for each experiment.
+        output_montage = obtain_output_montage_and_metrics(
             batch_x,
             batch_y.numpy(),
             noise_model,
@@ -112,17 +114,8 @@ def main() -> None:
             diff_inp,
             task,
         )
-        for metric_name, metric_value in metrics.items():
-            cumulative_metrics[metric_name] += metric_value * batch_size
-        total_samples += batch_size
         step += 1
 
-    average_metrics = {
-        metric_name: total / total_samples
-        for metric_name, total in cumulative_metrics.items()
-    }
-
-    log_metrics(run, average_metrics, prefix="val")
     save_output_montage(
         run=run,
         output_montage=output_montage,

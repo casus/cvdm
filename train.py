@@ -32,7 +32,6 @@ tf.keras.utils.set_random_seed(42)
 
 
 def main() -> None:
-
     # The script accepts the following command-line arguments:
     # - `--config-path`: The path to the YAML configuration file (required).
     # - `--neptune-token`: The API token for Neptune (optional).
@@ -116,7 +115,7 @@ def main() -> None:
         for batch in dataset:
             batch_x, batch_y = batch
 
-            cmap = "gray" if task in ["biosr_phase", "imagenet_phase"] else None
+            cmap = "gray" if task in ["biosr_sr ,biosr_phase", "imagenet_phase"] else None
             cumulative_loss += train_on_batch_cvdm(
                 batch_x, batch_y, joint_model, diff_inp=diff_inp
             )
@@ -135,7 +134,7 @@ def main() -> None:
                 )
 
             if step % image_freq == 0:
-                output_montage, metrics = obtain_output_montage_and_metrics(
+                output_montage = obtain_output_montage_and_metrics(
                     batch_x,
                     batch_y.numpy(),
                     noise_model,
@@ -145,7 +144,7 @@ def main() -> None:
                     diff_inp,
                     task,
                 )
-                log_metrics(run, metrics, prefix="train")
+                # log_metrics(run, metrics, prefix="train")
                 save_output_montage(
                     run=run,
                     output_montage=output_montage,

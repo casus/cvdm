@@ -9,16 +9,16 @@ from skimage.util import montage
 from tensorflow.keras.models import Model
 from tqdm import tqdm
 
-from cvdm.utils.metrics_utils import calculate_metrics
+
 
 
 def ddpm_obtain_sr_img(
-    x: np.ndarray,
-    timesteps_test: int,
-    noise_model: Model,
-    schedule_model: Model,
-    mu_model: Optional[Model],
-    out_shape: Optional[Tuple[int, ...]] = None,
+        x: np.ndarray,
+        timesteps_test: int,
+        noise_model: Model,
+        schedule_model: Model,
+        mu_model: Optional[Model],
+        out_shape: Optional[Tuple[int, ...]] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     if out_shape == None:
         out_shape = x.shape
@@ -51,9 +51,9 @@ def ddpm_obtain_sr_img(
         beta_factor = (1 - gamma_tm1) * beta_t / (1 - gamma_t)
         if count > 0:
             pred_sr = (
-                np.sqrt(gamma_t) * pred_sr
-                + np.sqrt(1 - gamma_t - beta_factor) * pred_noise
-                + np.sqrt(beta_factor) * z
+                    np.sqrt(gamma_t) * pred_sr
+                    + np.sqrt(1 - gamma_t - beta_factor) * pred_noise
+                    + np.sqrt(beta_factor) * z
             )
         if mu_model is not None:
             pred_noise = noise_model.predict([pred_sr, x, mu_pred, gamma_t], verbose=0)
@@ -70,10 +70,10 @@ def ddpm_obtain_sr_img(
 
 
 def create_output_montage(
-    pred_y: np.ndarray,
-    gamma_vec: np.ndarray,
-    y: np.ndarray,
-    x: Optional[np.ndarray],
+        pred_y: np.ndarray,
+        gamma_vec: np.ndarray,
+        y: np.ndarray,
+        x: Optional[np.ndarray],
 ) -> np.ndarray:
     if pred_y.shape[3] > 1:
         channel_axis = 3
@@ -125,7 +125,7 @@ def log_loss(run: Optional[Run], avg_loss: np.ndarray, prefix: str) -> None:
 
 
 def log_metrics(
-    run: Optional[Run], metrics_dict: Dict[str, float], prefix: str
+        run: Optional[Run], metrics_dict: Dict[str, float], prefix: str
 ) -> None:
     if run is not None:
         for metric_name, metric_value in metrics_dict.items():
@@ -137,25 +137,25 @@ def log_metrics(
 
 
 def save_weights(
-    run: Optional[Run],
-    model: Model,
-    mu_model: Optional[Model],
-    step: int,
-    output_path: str,
-    run_id: str,
+        run: Optional[Run],
+        model: Model,
+        mu_model: Optional[Model],
+        step: int,
+        output_path: str,
+        run_id: str,
 ) -> None:
     weights_dir = f"{output_path}/weights"
     os.makedirs(weights_dir, exist_ok=True)
 
     model_weights_path = f"{weights_dir}/model_{str(step)}_{run_id}.h5"
-    model.save_weights(model_weights_path, True)
+    model.save_weights(model_weights_path)
 
     if run is not None:
         run[f"model_weights/model_{str(step)}.h5"].upload(model_weights_path)
 
     if mu_model is not None:
         mu_model_weights_path = f"{weights_dir}/mu_model_{str(step)}_{run_id}.h5"
-        mu_model.save_weights(mu_model_weights_path, True)
+        mu_model.save_weights(mu_model_weights_path)
 
         if run is not None:
             run[f"mu_model_weights/mu_model_{str(step)}.h5"].upload(
@@ -164,13 +164,13 @@ def save_weights(
 
 
 def save_output_montage(
-    run: Optional[Run],
-    output_montage: np.ndarray,
-    step: int,
-    output_path: str,
-    run_id: str,
-    prefix: str,
-    cmap: Optional[str] = None,
+        run: Optional[Run],
+        output_montage: np.ndarray,
+        step: int,
+        output_path: str,
+        run_id: str,
+        prefix: str,
+        cmap: Optional[str] = None,
 ) -> None:
     output_dir = f"{output_path}/images"
     os.makedirs(output_dir, exist_ok=True)
@@ -186,16 +186,15 @@ def save_output_montage(
 
 
 def obtain_output_montage_and_metrics(
-    batch_x: np.ndarray,
-    batch_y: np.ndarray,
-    noise_model: Model,
-    schedule_model: Model,
-    mu_model: Optional[Model],
-    generation_timesteps: int,
-    diff_inp: bool,
-    task: str,
-) -> Tuple[np.ndarray, Dict]:
-
+        batch_x: np.ndarray,
+        batch_y: np.ndarray,
+        noise_model: Model,
+        schedule_model: Model,
+        mu_model: Optional[Model],
+        generation_timesteps: int,
+        diff_inp: bool,
+        task: str,
+) -> np.ndarray:
     pred_diff, gamma_vec, _ = ddpm_obtain_sr_img(
         batch_x,
         generation_timesteps,
@@ -205,11 +204,15 @@ def obtain_output_montage_and_metrics(
         batch_y.shape,
     )
     if diff_inp:
-        pred_y = np.clip(pred_diff + batch_x, -1, 1)
+        pred_y = pred_diff + batch_x
     else:
-        pred_y = np.clip(pred_diff, -1, 1)
+        pred_y = pred_diff
 
-    metrics = calculate_metrics(pred_y, batch_y)
+    if task == 'imagenet_sr':
+        pred_y = np.clip(pred_y, -1, 1)
+    else:
+        pred_y = np.clip(pred_y, -1, 1)
+
     if task in ["biosr_sr", "imagenet_sr"]:
         gamma_vec = np.clip(gamma_vec[..., generation_timesteps // 2], -1, 1)
         montage_x = batch_x
@@ -224,4 +227,4 @@ def obtain_output_montage_and_metrics(
     )
     if task in ["biosr_sr", "imagenet_sr"]:
         output_montage = (output_montage * 127.5 + 127.5).astype(np.uint8)
-    return output_montage, metrics
+    return output_montage
