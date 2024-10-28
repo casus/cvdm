@@ -6,6 +6,7 @@ Diffusion models have become popular for their ability to solve complex problems
 
 The datasets that we are using are available online:
 - [BioSR](https://github.com/qc17-THU/DL-SR), the data that we are using has been transformed to .npy files. You can also obtain the data [here](https://drive.google.com/drive/folders/1ZMLAZo4AGX4QASEyd3MGf8LE2B_Bne04?usp=sharing). To generate the training .npz you need to join the parts with 
+```cat bio_sr_part* > biosr.npz```
 - [ImageNet from ILSVRC2012](https://www.image-net.org/challenges/LSVRC/2012/)
 - [HCOCO](https://github.com/bcmi/Image-Harmonization-Dataset-iHarmony4?tab=readme-ov-file) - only used in model evaluation
 
