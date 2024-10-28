@@ -5,7 +5,7 @@ Diffusion models have become popular for their ability to solve complex problems
 ## Where to get the data?
 
 The datasets that we are using are available online:
-- [BioSR](https://github.com/qc17-THU/DL-SR), the data that we are using has been transformed to .npy files
+- [BioSR](https://github.com/qc17-THU/DL-SR), the data that we are using has been transformed to .npy files. You can also obtain the data [here](https://drive.google.com/drive/folders/1ZMLAZo4AGX4QASEyd3MGf8LE2B_Bne04?usp=sharing). To generate the training .npz you need to join the parts with 
 - [ImageNet from ILSVRC2012](https://www.image-net.org/challenges/LSVRC/2012/)
 - [HCOCO](https://github.com/bcmi/Image-Harmonization-Dataset-iHarmony4?tab=readme-ov-file) - only used in model evaluation
 
@@ -18,19 +18,12 @@ It is assumed that for:
 
 ## How to prepare environment?
 
-
-We provide a Dockerfile to prepare the environment. Run the following code in the root of this repository:
+Install requirements using
 ```
-docker build -t my-image .
-docker run -it my-image
-```
-Inside the image run:
-```
-eval "$(micromamba shell hook --shell bash)"
-micromamba activate cvdm
+pip install -r requirements.txt
 ```
 
-If you encounter issues with cupy installation (required only for the phase tasks) such as [these](https://github.com/cupy/cupy/issues/8466), you can modify the `cvdm/utils/phase_utils.py` to use pure numpy.
+Note: The Docker image is currently not working. 
 
 ## How to run the training code?
 
