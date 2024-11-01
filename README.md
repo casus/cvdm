@@ -18,6 +18,10 @@ It is assumed that for:
 - HCOCO phase evaluation task, data can be found in the directory specified as dataset_path in configs/hcoco_phase.yaml as a collection of JPEG files. Input to the model will be generated based on the ground truth.
 
 ## How to prepare environment?
+Create enviroment with
+ ```
+conda create -n cvdm_env python=3.10
+```
 
 Install requirements using
 ```
