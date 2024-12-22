@@ -23,7 +23,7 @@ eval:
   val_len: 100
 
 data:
-  dataset_path: "D:/biosr_dataset/valid/biosr_ds_test.npz"
+  dataset_path: "/biosr_dataset/train/biosr_ds.npz"
   n_samples: 100
   batch_size: 1
   im_size: 256
