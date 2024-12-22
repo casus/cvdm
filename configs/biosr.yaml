@@ -3,7 +3,7 @@ task: "biosr_sr"
 model:
   noise_model_type: "sr3"
   alpha: 0.001
-  load_weights: '/home/gabriel/Documents/p_code/cvdm/outputs/biosr/weights/model_0_4e9fa08f-beb8-4335-907f-32bbe3f70a72.h5'
+  load_weights: null
   load_mu_weights: null
   snr_expansion_n: 1
   zmd: False
@@ -23,9 +23,9 @@ eval:
   val_len: 100
 
 data:
-  dataset_path: "/media/gabriel/data_hdd/biosr_dataset/train/biosr_ds.npz"
+  dataset_path: "D:/biosr_dataset/valid/biosr_ds_test.npz"
   n_samples: 100
-  batch_size: 4
+  batch_size: 1
   im_size: 256
 
 neptune:
