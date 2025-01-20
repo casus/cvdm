@@ -2,6 +2,19 @@
 
 Diffusion models have become popular for their ability to solve complex problems where hidden information needs to be estimated from observed data. Among others, their use is popular in image generation tasks. These models rely on a key hyperparameter of the variance schedule that impacts how well they learn, but recent work shows that allowing the model to automatically learn this hyperparameter can improve both performance and efficiency. Our CVDM package implements Conditional Variational Diffusion Models (CVDM) as described [in the paper](https://arxiv.org/abs/2312.02246) that build on this idea, with the addition of [Zero-Mean Diffusion (ZMD)](https://arxiv.org/pdf/2406.04388), a technique that enhances performance in certain imaging tasks, aiming to make these approaches more accessible to researchers.
 
+## How to cite us
+
+Della Maggiora, Gabriel, Luis Alberto Croquevielle, Nikita Deshpande, Harry Horsley, Thomas Heinis, and Artur Yakimovich. "Conditional Variational Diffusion Models." In The Twelfth International Conference on Learning Representations. 2023.
+
+```
+@inproceedings{della2023conditional,
+  title={Conditional Variational Diffusion Models},
+  author={Della Maggiora, Gabriel and Croquevielle, Luis Alberto and Deshpande, Nikita and Horsley, Harry and Heinis, Thomas and Yakimovich, Artur},
+  booktitle={The Twelfth International Conference on Learning Representations},
+  year={2023}
+}
+```
+
 ## Where to get the data?
 
 The datasets that we are using are available online:
